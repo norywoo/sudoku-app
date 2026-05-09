@@ -1,0 +1,131 @@
+/* CSS custom properties (design tokens) — light theme */
+:root {
+  --bg: #f0f2f7;
+  --surface: #ffffff;
+  --text-primary: #1a1d2e;
+  --text-muted: #6b7280;
+  --accent: #4f46e5;
+  --accent-hover: #4338ca;
+
+  /* Cell colors */
+  --cell-bg: #ffffff;
+  --cell-hover: #eef0fb;
+  --border-light: #d1d5db;
+  --border-box: #374151;
+
+  /* Highlights */
+  --selected-bg: #c7d2fe;
+  --selected-text: #1a1d2e;
+  --related-bg: #e8eaf8;
+  --same-value-bg: #a5b4fc;
+
+  /* Number colors */
+  --given-color: #111827;
+  --user-color: #4f46e5;
+  --note-color: #6b7280;
+
+  /* States */
+  --error-bg: #fee2e2;
+  --error-color: #dc2626;
+  --success-bg: #d1fae5;
+  --success-color: #065f46;
+
+  /* Buttons */
+  --btn-bg: #ffffff;
+  --btn-text: #374151;
+  --btn-hover: #f3f4f6;
+}
+
+/* Dark theme via media query */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0f1117;
+    --surface: #1c1f2e;
+    --text-primary: #e5e7eb;
+    --text-muted: #9ca3af;
+    --accent: #6366f1;
+    --accent-hover: #4f46e5;
+
+    --cell-bg: #1c1f2e;
+    --cell-hover: #252840;
+    --border-light: #374151;
+    --border-box: #9ca3af;
+
+    --selected-bg: #312e81;
+    --selected-text: #e0e7ff;
+    --related-bg: #1e2040;
+    --same-value-bg: #3730a3;
+
+    --given-color: #f3f4f6;
+    --user-color: #818cf8;
+    --note-color: #9ca3af;
+
+    --error-bg: #450a0a;
+    --error-color: #f87171;
+    --success-bg: #022c22;
+    --success-color: #34d399;
+
+    --btn-bg: #252840;
+    --btn-text: #e5e7eb;
+    --btn-hover: #2d3055;
+  }
+}
+
+/* Global reset */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  background-color: var(--bg);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  font-family: inherit;
+}
+
+/* App layout */
+.app {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.header {
+  width: 100%;
+  padding: 20px 24px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.title {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: var(--accent);
+  letter-spacing: -0.02em;
+}
+
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 16px 32px;
+  width: 100%;
+  max-width: 600px;
+}

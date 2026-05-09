@@ -1,0 +1,24 @@
+.board {
+  display: grid;
+  grid-template-columns: repeat(9, 1fr);
+  grid-template-rows: repeat(9, 1fr);
+  width: min(540px, 95vw);
+  height: min(540px, 95vw);
+  border: 3px solid var(--border-box);
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
+}
+
+.cellWrapper {
+  display: flex;
+  position: relative;
+}
+
+.boxBorderRight {
+  border-right: 3px solid var(--border-box);
+}
+
+.boxBorderBottom {
+  border-bottom: 3px solid var(--border-box);
+}

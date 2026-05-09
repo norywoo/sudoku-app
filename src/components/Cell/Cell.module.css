@@ -1,0 +1,81 @@
+.cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+  background-color: var(--cell-bg);
+  border: 1px solid var(--border-light);
+  transition: background-color 0.1s ease;
+  user-select: none;
+  position: relative;
+}
+
+.cell:hover {
+  background-color: var(--cell-hover);
+}
+
+/* Box borders — applied via Board */
+.value {
+  font-size: clamp(1rem, 2.5vw, 1.5rem);
+  font-weight: 500;
+  line-height: 1;
+}
+
+.notes {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  width: 100%;
+  height: 100%;
+  padding: 2px;
+  box-sizing: border-box;
+}
+
+.note {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: clamp(0.45rem, 1vw, 0.65rem);
+  color: var(--note-color);
+  line-height: 1;
+}
+
+/* State variants */
+.given .value {
+  color: var(--given-color);
+  font-weight: 700;
+}
+
+.userInput .value {
+  color: var(--user-color);
+}
+
+.selected {
+  background-color: var(--selected-bg) !important;
+}
+
+.selected .value {
+  color: var(--selected-text);
+}
+
+.related {
+  background-color: var(--related-bg);
+}
+
+.sameValue {
+  background-color: var(--same-value-bg);
+}
+
+.sameValue.given .value {
+  color: var(--given-color);
+}
+
+.error {
+  background-color: var(--error-bg) !important;
+}
+
+.error .value {
+  color: var(--error-color) !important;
+}
