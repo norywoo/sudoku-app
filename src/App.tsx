@@ -6,8 +6,22 @@ import { useSudoku } from './hooks/useSudoku'
 import styles from './App.module.css'
 
 export default function App() {
-  const { state, highlights, selectCell, inputNumber, clearCell, newGame, setDifficulty } =
-    useSudoku()
+  const {
+    state,
+    highlights,
+    selectCell,
+    inputNumber,
+    clearCell,
+    newGame,
+    setDifficulty,
+    revert,
+    canRevert,
+    forward,
+    canForward,
+    cycleMarkColor,
+    lastInputCell,
+    revertingCells,
+  } = useSudoku()
 
   // Keyboard support
   const handleKeyDown = useCallback(
@@ -22,6 +36,18 @@ export default function App() {
 
       if (e.key === 'Backspace' || e.key === 'Delete' || e.key === '0') {
         clearCell()
+        return
+      }
+
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+        e.preventDefault()
+        revert()
+        return
+      }
+
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.shiftKey && e.key === 'z'))) {
+        e.preventDefault()
+        forward()
         return
       }
 
@@ -42,7 +68,7 @@ export default function App() {
         }
       }
     },
-    [state.isComplete, state.selectedCell, inputNumber, clearCell, selectCell],
+    [state.isComplete, state.selectedCell, inputNumber, clearCell, selectCell, revert, forward],
   )
 
   useEffect(() => {
@@ -63,14 +89,21 @@ export default function App() {
           difficulty={state.difficulty}
           elapsedSeconds={state.elapsedSeconds}
           isComplete={state.isComplete}
+          canRevert={canRevert}
+          canForward={canForward}
           onNewGame={newGame}
           onSetDifficulty={setDifficulty}
+          onRevert={revert}
+          onForward={forward}
         />
 
         <Board
           board={state.board}
           highlights={highlights}
+          lastInputCell={lastInputCell}
+          revertingCells={revertingCells}
           onCellClick={selectCell}
+          onCycleMarkColor={cycleMarkColor}
         />
 
         <NumberPad

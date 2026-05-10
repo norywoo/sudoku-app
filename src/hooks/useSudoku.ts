@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useReducer, useRef } from 'react'
+import { useCallback, useEffect, useReducer, useRef, useState } from 'react'
 import { CellState, Difficulty, GameState } from '../types'
 import { generatePuzzle } from '../utils/generator'
 import { isBoardComplete, isValidPlacement } from '../utils/validator'
@@ -14,9 +14,12 @@ function buildBoard(puzzle: number[][], solution: number[][]): CellState[][] {
       isGiven: val !== 0,
       isError: val !== 0 && val !== solution[r][c],
       notes: [],
+      markColor: 0,
     })),
   )
 }
+
+const HISTORY_LIMIT = 50
 
 function buildInitialState(difficulty: Difficulty): GameState {
   const { puzzle, solution } = generatePuzzle(difficulty)
@@ -27,6 +30,9 @@ function buildInitialState(difficulty: Difficulty): GameState {
     difficulty,
     isComplete: false,
     elapsedSeconds: 0,
+    history: [],
+    future: [],
+    lastInputCell: null,
   }
 }
 
@@ -34,10 +40,15 @@ function buildInitialState(difficulty: Difficulty): GameState {
 // Reducer
 // ---------------------------------------------------------------------------
 
+const MARK_CYCLE_LENGTH = 5 // 0..4
+
 type Action =
   | { type: 'SELECT_CELL'; row: number; col: number }
   | { type: 'INPUT_NUMBER'; num: number }
   | { type: 'CLEAR_CELL' }
+  | { type: 'REVERT' }
+  | { type: 'FORWARD' }
+  | { type: 'CYCLE_MARK_COLOR'; row: number; col: number }
   | { type: 'NEW_GAME'; difficulty: Difficulty }
   | { type: 'SET_DIFFICULTY'; difficulty: Difficulty }
   | { type: 'TICK' }
@@ -63,7 +74,6 @@ function reducer(state: GameState, action: Action): GameState {
       const cell = state.board[row][col]
       if (cell.isGiven) return state
 
-      // Build a raw number board reflecting the new value — used for all validation
       const rawBoard = state.board.map((r) => r.map((c) => c.value))
       rawBoard[row][col] = action.num
 
@@ -74,7 +84,6 @@ function reducer(state: GameState, action: Action): GameState {
           if (ri === row && ci === col) {
             return { ...c, value: action.num, isError, notes: [] }
           }
-          // Re-check errors for every non-given, filled cell using the updated board
           if (c.isGiven || c.value === 0) return c
           const err = !isValidPlacement(rawBoard, ri, ci, c.value)
           return { ...c, isError: err }
@@ -82,7 +91,15 @@ function reducer(state: GameState, action: Action): GameState {
       )
 
       const isComplete = isBoardComplete(rawBoard, state.solution)
-      return { ...state, board: newBoard, isComplete }
+      const newHistory = [...state.history, state.board].slice(-HISTORY_LIMIT)
+      return {
+        ...state,
+        board: newBoard,
+        isComplete,
+        history: newHistory,
+        future: [],
+        lastInputCell: [row, col],
+      }
     }
 
     case 'CLEAR_CELL': {
@@ -91,23 +108,65 @@ function reducer(state: GameState, action: Action): GameState {
       const cell = state.board[row][col]
       if (cell.isGiven) return state
 
-      // Build raw board with the cleared cell set to 0
       const rawBoard = state.board.map((r) => r.map((c) => c.value))
       rawBoard[row][col] = 0
 
       const newBoard = state.board.map((r, ri) =>
         r.map((c, ci) => {
           if (ri === row && ci === col) {
-            return { ...c, value: 0, isError: false, notes: [] }
+            return { ...c, value: 0, isError: false, notes: [], markColor: 0 as const }
           }
-          // Re-check other cells' errors now that this cell is cleared
           if (c.isGiven || c.value === 0) return c
           const err = !isValidPlacement(rawBoard, ri, ci, c.value)
           return { ...c, isError: err }
         }),
       )
 
+      const newHistory = [...state.history, state.board].slice(-HISTORY_LIMIT)
+      const isLastInput =
+        state.lastInputCell &&
+        state.lastInputCell[0] === row &&
+        state.lastInputCell[1] === col
+      return {
+        ...state,
+        board: newBoard,
+        history: newHistory,
+        future: [],
+        lastInputCell: isLastInput ? null : state.lastInputCell,
+      }
+    }
+
+    case 'CYCLE_MARK_COLOR': {
+      const { row, col } = action
+      if (!state.lastInputCell) return state
+      if (state.lastInputCell[0] !== row || state.lastInputCell[1] !== col) return state
+      const cell = state.board[row][col]
+      if (cell.isGiven || cell.value === 0) return state
+      const nextColor = ((cell.markColor + 1) % MARK_CYCLE_LENGTH) as import('../types').MarkColor
+      const newBoard = state.board.map((r, ri) =>
+        r.map((c, ci) => (ri === row && ci === col ? { ...c, markColor: nextColor } : c)),
+      )
       return { ...state, board: newBoard }
+    }
+
+    case 'REVERT': {
+      if (state.history.length === 0) return state
+      const newHistory = [...state.history]
+      const prevBoard = newHistory.pop()!
+      const newFuture = [state.board, ...state.future].slice(0, HISTORY_LIMIT)
+      const rawBoard = prevBoard.map((r) => r.map((c) => c.value))
+      const isComplete = isBoardComplete(rawBoard, state.solution)
+      return { ...state, board: prevBoard, history: newHistory, future: newFuture, isComplete }
+    }
+
+    case 'FORWARD': {
+      if (state.future.length === 0) return state
+      const newFuture = [...state.future]
+      const nextBoard = newFuture.shift()!
+      const newHistory = [...state.history, state.board].slice(-HISTORY_LIMIT)
+      const rawBoard = nextBoard.map((r) => r.map((c) => c.value))
+      const isComplete = isBoardComplete(rawBoard, state.solution)
+      return { ...state, board: nextBoard, history: newHistory, future: newFuture, isComplete }
     }
 
     case 'NEW_GAME': {
@@ -176,6 +235,8 @@ function computeHighlights(state: GameState): HighlightMap {
 export function useSudoku() {
   const [state, dispatch] = useReducer(reducer, 'easy', buildInitialState)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const [revertingCells, setRevertingCells] = useState<Set<string>>(new Set())
+  const revertAnimRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Timer
   useEffect(() => {
@@ -207,12 +268,63 @@ export function useSudoku() {
 
   const newGame = useCallback((difficulty: Difficulty) => {
     if (timerRef.current) clearInterval(timerRef.current)
+    if (revertAnimRef.current) {
+      clearTimeout(revertAnimRef.current)
+      revertAnimRef.current = null
+      setRevertingCells(new Set())
+    }
     dispatch({ type: 'NEW_GAME', difficulty })
     timerRef.current = setInterval(() => dispatch({ type: 'TICK' }), 1000)
   }, [])
 
   const setDifficulty = useCallback((difficulty: Difficulty) => {
     dispatch({ type: 'SET_DIFFICULTY', difficulty })
+  }, [])
+
+  const revert = useCallback(() => {
+    if (state.history.length === 0 || state.isComplete) return
+
+    // アニメーション中に再クリックしたら即座に実行
+    if (revertAnimRef.current) {
+      clearTimeout(revertAnimRef.current)
+      revertAnimRef.current = null
+      setRevertingCells(new Set())
+      dispatch({ type: 'REVERT' })
+      return
+    }
+
+    // markColor > 0 で prevBoard と異なるセルを検出
+    const prevBoard = state.history[state.history.length - 1]
+    const flashing = new Set<string>()
+    state.board.forEach((row, r) => {
+      row.forEach((cell, c) => {
+        if (cell.markColor > 0 && !cell.isGiven) {
+          const prev = prevBoard[r][c]
+          if (prev.value !== cell.value || prev.markColor !== cell.markColor) {
+            flashing.add(`${r},${c}`)
+          }
+        }
+      })
+    })
+
+    if (flashing.size > 0) {
+      setRevertingCells(flashing)
+      revertAnimRef.current = setTimeout(() => {
+        revertAnimRef.current = null
+        setRevertingCells(new Set())
+        dispatch({ type: 'REVERT' })
+      }, 500)
+    } else {
+      dispatch({ type: 'REVERT' })
+    }
+  }, [state.history, state.board, state.isComplete])
+
+  const forward = useCallback(() => {
+    dispatch({ type: 'FORWARD' })
+  }, [])
+
+  const cycleMarkColor = useCallback((row: number, col: number) => {
+    dispatch({ type: 'CYCLE_MARK_COLOR', row, col })
   }, [])
 
   const highlights = computeHighlights(state)
@@ -225,5 +337,12 @@ export function useSudoku() {
     clearCell,
     newGame,
     setDifficulty,
+    revert,
+    canRevert: state.history.length > 0,
+    forward,
+    canForward: state.future.length > 0,
+    cycleMarkColor,
+    lastInputCell: state.lastInputCell,
+    revertingCells,
   }
 }

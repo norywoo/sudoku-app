@@ -6,8 +6,12 @@ interface ControlsProps {
   difficulty: Difficulty
   elapsedSeconds: number
   isComplete: boolean
+  canRevert: boolean
+  canForward: boolean
   onNewGame: (difficulty: Difficulty) => void
   onSetDifficulty: (difficulty: Difficulty) => void
+  onRevert: () => void
+  onForward: () => void
 }
 
 function formatTime(seconds: number): string {
@@ -27,13 +31,14 @@ export const Controls = memo(function Controls({
   difficulty,
   elapsedSeconds,
   isComplete,
+  canRevert,
+  canForward,
   onNewGame,
   onSetDifficulty,
+  onRevert,
+  onForward,
 }: ControlsProps) {
   const handleNewGame = () => onNewGame(difficulty)
-  const handleDifficulty = (d: Difficulty) => {
-    onSetDifficulty(d)
-  }
 
   return (
     <div className={styles.controls}>
@@ -43,7 +48,7 @@ export const Controls = memo(function Controls({
             <button
               key={d}
               className={[styles.diffBtn, difficulty === d ? styles.active : ''].join(' ')}
-              onClick={() => handleDifficulty(d)}
+              onClick={() => onSetDifficulty(d)}
               aria-pressed={difficulty === d}
             >
               {DIFFICULTY_LABELS[d]}
@@ -59,9 +64,31 @@ export const Controls = memo(function Controls({
         </div>
       </div>
 
-      <button className={styles.newGameBtn} onClick={handleNewGame}>
-        New Game
-      </button>
+      <div className={styles.actionRow}>
+        <div className={styles.historyGroup} role="group" aria-label="Undo / Redo">
+          <button
+            className={styles.historyBtn}
+            onClick={onRevert}
+            disabled={!canRevert || isComplete}
+            aria-label="Undo"
+            title="Undo (Ctrl+Z)"
+          >
+            ◀
+          </button>
+          <button
+            className={styles.historyBtn}
+            onClick={onForward}
+            disabled={!canForward || isComplete}
+            aria-label="Redo"
+            title="Redo (Ctrl+Y)"
+          >
+            ▶
+          </button>
+        </div>
+        <button className={styles.newGameBtn} onClick={handleNewGame}>
+          New Game
+        </button>
+      </div>
 
       {isComplete && (
         <div className={styles.successBanner} role="alert">

@@ -7,15 +7,37 @@ import styles from './Board.module.css'
 interface BoardProps {
   board: CellState[][]
   highlights: HighlightMap
+  lastInputCell: [number, number] | null
+  revertingCells: Set<string>
   onCellClick: (row: number, col: number) => void
+  onCycleMarkColor: (row: number, col: number) => void
 }
 
-export const Board = memo(function Board({ board, highlights, onCellClick }: BoardProps) {
+export const Board = memo(function Board({
+  board,
+  highlights,
+  lastInputCell,
+  revertingCells,
+  onCellClick,
+  onCycleMarkColor,
+}: BoardProps) {
+  const handleClick = (r: number, c: number) => {
+    const isLastInput = lastInputCell && lastInputCell[0] === r && lastInputCell[1] === c
+    const isSelected = highlights.selected === `${r},${c}`
+    if (isLastInput && isSelected) {
+      onCycleMarkColor(r, c)
+    } else {
+      onCellClick(r, c)
+    }
+  }
+
   return (
     <div className={styles.board} role="grid" aria-label="Sudoku board">
       {board.map((row, r) =>
         row.map((cell, c) => {
           const key = `${r},${c}`
+          const isLastInput = !!(lastInputCell && lastInputCell[0] === r && lastInputCell[1] === c)
+          const isReverting = revertingCells.has(key)
           return (
             <div
               key={key}
@@ -34,7 +56,9 @@ export const Board = memo(function Board({ board, highlights, onCellClick }: Boa
                 isSelected={highlights.selected === key}
                 isRelated={highlights.related.has(key) && highlights.selected !== key}
                 isSameValue={highlights.sameValue.has(key) && highlights.selected !== key}
-                onClick={onCellClick}
+                isLastInput={isLastInput}
+                isReverting={isReverting}
+                onClick={handleClick}
               />
             </div>
           )
