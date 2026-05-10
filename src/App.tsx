@@ -6,8 +6,19 @@ import { useSudoku } from './hooks/useSudoku'
 import styles from './App.module.css'
 
 export default function App() {
-  const { state, highlights, selectCell, inputNumber, clearCell, newGame, setDifficulty, revert, canRevert } =
-    useSudoku()
+  const {
+    state,
+    highlights,
+    selectCell,
+    inputNumber,
+    clearCell,
+    newGame,
+    setDifficulty,
+    revert,
+    canRevert,
+    cycleMarkColor,
+    lastInputCell,
+  } = useSudoku()
 
   // Keyboard support
   const handleKeyDown = useCallback(
@@ -78,7 +89,9 @@ export default function App() {
         <Board
           board={state.board}
           highlights={highlights}
+          lastInputCell={lastInputCell}
           onCellClick={selectCell}
+          onCycleMarkColor={cycleMarkColor}
         />
 
         <NumberPad

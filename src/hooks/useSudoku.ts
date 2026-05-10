@@ -14,6 +14,7 @@ function buildBoard(puzzle: number[][], solution: number[][]): CellState[][] {
       isGiven: val !== 0,
       isError: val !== 0 && val !== solution[r][c],
       notes: [],
+      markColor: 0,
     })),
   )
 }
@@ -30,6 +31,7 @@ function buildInitialState(difficulty: Difficulty): GameState {
     isComplete: false,
     elapsedSeconds: 0,
     history: [],
+    lastInputCell: null,
   }
 }
 
@@ -37,11 +39,14 @@ function buildInitialState(difficulty: Difficulty): GameState {
 // Reducer
 // ---------------------------------------------------------------------------
 
+const MARK_CYCLE_LENGTH = 5 // 0..4
+
 type Action =
   | { type: 'SELECT_CELL'; row: number; col: number }
   | { type: 'INPUT_NUMBER'; num: number }
   | { type: 'CLEAR_CELL' }
   | { type: 'REVERT' }
+  | { type: 'CYCLE_MARK_COLOR'; row: number; col: number }
   | { type: 'NEW_GAME'; difficulty: Difficulty }
   | { type: 'SET_DIFFICULTY'; difficulty: Difficulty }
   | { type: 'TICK' }
@@ -85,7 +90,13 @@ function reducer(state: GameState, action: Action): GameState {
 
       const isComplete = isBoardComplete(rawBoard, state.solution)
       const newHistory = [...state.history, state.board].slice(-HISTORY_LIMIT)
-      return { ...state, board: newBoard, isComplete, history: newHistory }
+      return {
+        ...state,
+        board: newBoard,
+        isComplete,
+        history: newHistory,
+        lastInputCell: [row, col],
+      }
     }
 
     case 'CLEAR_CELL': {
@@ -100,7 +111,7 @@ function reducer(state: GameState, action: Action): GameState {
       const newBoard = state.board.map((r, ri) =>
         r.map((c, ci) => {
           if (ri === row && ci === col) {
-            return { ...c, value: 0, isError: false, notes: [] }
+            return { ...c, value: 0, isError: false, notes: [], markColor: 0 as const }
           }
           if (c.isGiven || c.value === 0) return c
           const err = !isValidPlacement(rawBoard, ri, ci, c.value)
@@ -109,7 +120,29 @@ function reducer(state: GameState, action: Action): GameState {
       )
 
       const newHistory = [...state.history, state.board].slice(-HISTORY_LIMIT)
-      return { ...state, board: newBoard, history: newHistory }
+      const isLastInput =
+        state.lastInputCell &&
+        state.lastInputCell[0] === row &&
+        state.lastInputCell[1] === col
+      return {
+        ...state,
+        board: newBoard,
+        history: newHistory,
+        lastInputCell: isLastInput ? null : state.lastInputCell,
+      }
+    }
+
+    case 'CYCLE_MARK_COLOR': {
+      const { row, col } = action
+      if (!state.lastInputCell) return state
+      if (state.lastInputCell[0] !== row || state.lastInputCell[1] !== col) return state
+      const cell = state.board[row][col]
+      if (cell.isGiven || cell.value === 0) return state
+      const nextColor = ((cell.markColor + 1) % MARK_CYCLE_LENGTH) as import('../types').MarkColor
+      const newBoard = state.board.map((r, ri) =>
+        r.map((c, ci) => (ri === row && ci === col ? { ...c, markColor: nextColor } : c)),
+      )
+      return { ...state, board: newBoard }
     }
 
     case 'REVERT': {
@@ -228,6 +261,10 @@ export function useSudoku() {
     dispatch({ type: 'REVERT' })
   }, [])
 
+  const cycleMarkColor = useCallback((row: number, col: number) => {
+    dispatch({ type: 'CYCLE_MARK_COLOR', row, col })
+  }, [])
+
   const highlights = computeHighlights(state)
 
   return {
@@ -240,5 +277,7 @@ export function useSudoku() {
     setDifficulty,
     revert,
     canRevert: state.history.length > 0,
+    cycleMarkColor,
+    lastInputCell: state.lastInputCell,
   }
 }

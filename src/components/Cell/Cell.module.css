@@ -79,3 +79,21 @@
 .error .value {
   color: var(--error-color) !important;
 }
+
+/* lastInput: cell where color-marking is available */
+.lastInput {
+  outline: 2px dashed currentColor;
+  outline-offset: -3px;
+  opacity: 0.9;
+}
+
+/* small color dot at bottom-right corner indicating current markColor */
+.markDot {
+  position: absolute;
+  bottom: 3px;
+  right: 3px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  pointer-events: none;
+}

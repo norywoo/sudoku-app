@@ -1,10 +1,13 @@
 export type Difficulty = 'easy' | 'medium' | 'hard'
 
+export type MarkColor = 0 | 1 | 2 | 3 | 4
+
 export interface CellState {
   value: number
   isGiven: boolean
   isError: boolean
   notes: number[]
+  markColor: MarkColor
 }
 
 export interface GameState {
@@ -15,4 +18,5 @@ export interface GameState {
   isComplete: boolean
   elapsedSeconds: number
   history: CellState[][][]
+  lastInputCell: [number, number] | null
 }
