@@ -14,4 +14,5 @@ export interface GameState {
   difficulty: Difficulty
   isComplete: boolean
   elapsedSeconds: number
+  history: CellState[][][]
 }

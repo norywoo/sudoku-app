@@ -18,6 +18,8 @@ function buildBoard(puzzle: number[][], solution: number[][]): CellState[][] {
   )
 }
 
+const HISTORY_LIMIT = 50
+
 function buildInitialState(difficulty: Difficulty): GameState {
   const { puzzle, solution } = generatePuzzle(difficulty)
   return {
@@ -27,6 +29,7 @@ function buildInitialState(difficulty: Difficulty): GameState {
     difficulty,
     isComplete: false,
     elapsedSeconds: 0,
+    history: [],
   }
 }
 
@@ -38,6 +41,7 @@ type Action =
   | { type: 'SELECT_CELL'; row: number; col: number }
   | { type: 'INPUT_NUMBER'; num: number }
   | { type: 'CLEAR_CELL' }
+  | { type: 'REVERT' }
   | { type: 'NEW_GAME'; difficulty: Difficulty }
   | { type: 'SET_DIFFICULTY'; difficulty: Difficulty }
   | { type: 'TICK' }
@@ -63,7 +67,6 @@ function reducer(state: GameState, action: Action): GameState {
       const cell = state.board[row][col]
       if (cell.isGiven) return state
 
-      // Build a raw number board reflecting the new value — used for all validation
       const rawBoard = state.board.map((r) => r.map((c) => c.value))
       rawBoard[row][col] = action.num
 
@@ -74,7 +77,6 @@ function reducer(state: GameState, action: Action): GameState {
           if (ri === row && ci === col) {
             return { ...c, value: action.num, isError, notes: [] }
           }
-          // Re-check errors for every non-given, filled cell using the updated board
           if (c.isGiven || c.value === 0) return c
           const err = !isValidPlacement(rawBoard, ri, ci, c.value)
           return { ...c, isError: err }
@@ -82,7 +84,8 @@ function reducer(state: GameState, action: Action): GameState {
       )
 
       const isComplete = isBoardComplete(rawBoard, state.solution)
-      return { ...state, board: newBoard, isComplete }
+      const newHistory = [...state.history, state.board].slice(-HISTORY_LIMIT)
+      return { ...state, board: newBoard, isComplete, history: newHistory }
     }
 
     case 'CLEAR_CELL': {
@@ -91,7 +94,6 @@ function reducer(state: GameState, action: Action): GameState {
       const cell = state.board[row][col]
       if (cell.isGiven) return state
 
-      // Build raw board with the cleared cell set to 0
       const rawBoard = state.board.map((r) => r.map((c) => c.value))
       rawBoard[row][col] = 0
 
@@ -100,14 +102,21 @@ function reducer(state: GameState, action: Action): GameState {
           if (ri === row && ci === col) {
             return { ...c, value: 0, isError: false, notes: [] }
           }
-          // Re-check other cells' errors now that this cell is cleared
           if (c.isGiven || c.value === 0) return c
           const err = !isValidPlacement(rawBoard, ri, ci, c.value)
           return { ...c, isError: err }
         }),
       )
 
-      return { ...state, board: newBoard }
+      const newHistory = [...state.history, state.board].slice(-HISTORY_LIMIT)
+      return { ...state, board: newBoard, history: newHistory }
+    }
+
+    case 'REVERT': {
+      if (state.history.length === 0 || state.isComplete) return state
+      const newHistory = [...state.history]
+      const prevBoard = newHistory.pop()!
+      return { ...state, board: prevBoard, history: newHistory }
     }
 
     case 'NEW_GAME': {
@@ -215,6 +224,10 @@ export function useSudoku() {
     dispatch({ type: 'SET_DIFFICULTY', difficulty })
   }, [])
 
+  const revert = useCallback(() => {
+    dispatch({ type: 'REVERT' })
+  }, [])
+
   const highlights = computeHighlights(state)
 
   return {
@@ -225,5 +238,7 @@ export function useSudoku() {
     clearCell,
     newGame,
     setDifficulty,
+    revert,
+    canRevert: state.history.length > 0,
   }
 }

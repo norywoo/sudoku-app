@@ -6,7 +6,7 @@ import { useSudoku } from './hooks/useSudoku'
 import styles from './App.module.css'
 
 export default function App() {
-  const { state, highlights, selectCell, inputNumber, clearCell, newGame, setDifficulty } =
+  const { state, highlights, selectCell, inputNumber, clearCell, newGame, setDifficulty, revert, canRevert } =
     useSudoku()
 
   // Keyboard support
@@ -22,6 +22,12 @@ export default function App() {
 
       if (e.key === 'Backspace' || e.key === 'Delete' || e.key === '0') {
         clearCell()
+        return
+      }
+
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+        e.preventDefault()
+        revert()
         return
       }
 
@@ -42,7 +48,7 @@ export default function App() {
         }
       }
     },
-    [state.isComplete, state.selectedCell, inputNumber, clearCell, selectCell],
+    [state.isComplete, state.selectedCell, inputNumber, clearCell, selectCell, revert],
   )
 
   useEffect(() => {
@@ -63,8 +69,10 @@ export default function App() {
           difficulty={state.difficulty}
           elapsedSeconds={state.elapsedSeconds}
           isComplete={state.isComplete}
+          canRevert={canRevert}
           onNewGame={newGame}
           onSetDifficulty={setDifficulty}
+          onRevert={revert}
         />
 
         <Board

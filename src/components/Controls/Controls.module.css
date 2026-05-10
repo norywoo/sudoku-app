@@ -66,8 +66,42 @@
   color: var(--success-color);
 }
 
+.actionRow {
+  display: flex;
+  gap: 8px;
+}
+
+.revertBtn {
+  flex: 0 0 auto;
+  padding: 12px 18px;
+  font-size: 1rem;
+  font-weight: 700;
+  border: 2px solid var(--border-light);
+  border-radius: 10px;
+  background: var(--btn-bg);
+  color: var(--btn-text);
+  cursor: pointer;
+  transition: background-color 0.12s ease, border-color 0.12s ease, color 0.12s ease, transform 0.08s ease;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.revertBtn:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.revertBtn:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.revertBtn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
 .newGameBtn {
-  width: 100%;
+  flex: 1;
   padding: 12px;
   font-size: 1rem;
   font-weight: 700;
