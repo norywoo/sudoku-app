@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useReducer, useRef } from 'react'
+import { useCallback, useEffect, useReducer, useRef, useState } from 'react'
 import { CellState, Difficulty, GameState } from '../types'
 import { generatePuzzle } from '../utils/generator'
 import { isBoardComplete, isValidPlacement } from '../utils/validator'
@@ -231,6 +231,8 @@ function computeHighlights(state: GameState): HighlightMap {
 export function useSudoku() {
   const [state, dispatch] = useReducer(reducer, 'easy', buildInitialState)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const [revertingCells, setRevertingCells] = useState<Set<string>>(new Set())
+  const revertAnimRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Timer
   useEffect(() => {
@@ -262,6 +264,11 @@ export function useSudoku() {
 
   const newGame = useCallback((difficulty: Difficulty) => {
     if (timerRef.current) clearInterval(timerRef.current)
+    if (revertAnimRef.current) {
+      clearTimeout(revertAnimRef.current)
+      revertAnimRef.current = null
+      setRevertingCells(new Set())
+    }
     dispatch({ type: 'NEW_GAME', difficulty })
     timerRef.current = setInterval(() => dispatch({ type: 'TICK' }), 1000)
   }, [])
@@ -271,8 +278,42 @@ export function useSudoku() {
   }, [])
 
   const revert = useCallback(() => {
-    dispatch({ type: 'REVERT' })
-  }, [])
+    if (state.history.length === 0 || state.isComplete) return
+
+    // アニメーション中に再クリックしたら即座に実行
+    if (revertAnimRef.current) {
+      clearTimeout(revertAnimRef.current)
+      revertAnimRef.current = null
+      setRevertingCells(new Set())
+      dispatch({ type: 'REVERT' })
+      return
+    }
+
+    // markColor > 0 で prevBoard と異なるセルを検出
+    const prevBoard = state.history[state.history.length - 1]
+    const flashing = new Set<string>()
+    state.board.forEach((row, r) => {
+      row.forEach((cell, c) => {
+        if (cell.markColor > 0 && !cell.isGiven) {
+          const prev = prevBoard[r][c]
+          if (prev.value !== cell.value || prev.markColor !== cell.markColor) {
+            flashing.add(`${r},${c}`)
+          }
+        }
+      })
+    })
+
+    if (flashing.size > 0) {
+      setRevertingCells(flashing)
+      revertAnimRef.current = setTimeout(() => {
+        revertAnimRef.current = null
+        setRevertingCells(new Set())
+        dispatch({ type: 'REVERT' })
+      }, 500)
+    } else {
+      dispatch({ type: 'REVERT' })
+    }
+  }, [state.history, state.board, state.isComplete])
 
   const forward = useCallback(() => {
     dispatch({ type: 'FORWARD' })
@@ -298,5 +339,6 @@ export function useSudoku() {
     canForward: state.future.length > 0,
     cycleMarkColor,
     lastInputCell: state.lastInputCell,
+    revertingCells,
   }
 }

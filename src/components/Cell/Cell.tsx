@@ -13,6 +13,7 @@ interface CellProps {
   isRelated: boolean
   isSameValue: boolean
   isLastInput: boolean
+  isReverting: boolean
   onClick: (row: number, col: number) => void
 }
 
@@ -24,6 +25,7 @@ export const Cell = memo(function Cell({
   isRelated,
   isSameValue,
   isLastInput,
+  isReverting,
   onClick,
 }: CellProps) {
   const handleClick = () => onClick(row, col)
@@ -39,6 +41,7 @@ export const Cell = memo(function Cell({
     cell.isGiven ? styles.given : '',
     isUserFilled ? styles.userInput : '',
     isLastInput && isUserFilled ? styles.lastInput : '',
+    isReverting ? styles.reverting : '',
   ]
     .filter(Boolean)
     .join(' ')

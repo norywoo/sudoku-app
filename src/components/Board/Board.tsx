@@ -8,6 +8,7 @@ interface BoardProps {
   board: CellState[][]
   highlights: HighlightMap
   lastInputCell: [number, number] | null
+  revertingCells: Set<string>
   onCellClick: (row: number, col: number) => void
   onCycleMarkColor: (row: number, col: number) => void
 }
@@ -16,6 +17,7 @@ export const Board = memo(function Board({
   board,
   highlights,
   lastInputCell,
+  revertingCells,
   onCellClick,
   onCycleMarkColor,
 }: BoardProps) {
@@ -35,6 +37,7 @@ export const Board = memo(function Board({
         row.map((cell, c) => {
           const key = `${r},${c}`
           const isLastInput = !!(lastInputCell && lastInputCell[0] === r && lastInputCell[1] === c)
+          const isReverting = revertingCells.has(key)
           return (
             <div
               key={key}
@@ -54,6 +57,7 @@ export const Board = memo(function Board({
                 isRelated={highlights.related.has(key) && highlights.selected !== key}
                 isSameValue={highlights.sameValue.has(key) && highlights.selected !== key}
                 isLastInput={isLastInput}
+                isReverting={isReverting}
                 onClick={handleClick}
               />
             </div>

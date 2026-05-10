@@ -20,6 +20,7 @@ export default function App() {
     canForward,
     cycleMarkColor,
     lastInputCell,
+    revertingCells,
   } = useSudoku()
 
   // Keyboard support
@@ -100,6 +101,7 @@ export default function App() {
           board={state.board}
           highlights={highlights}
           lastInputCell={lastInputCell}
+          revertingCells={revertingCells}
           onCellClick={selectCell}
           onCycleMarkColor={cycleMarkColor}
         />
