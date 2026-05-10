@@ -150,19 +150,23 @@ function reducer(state: GameState, action: Action): GameState {
     }
 
     case 'REVERT': {
-      if (state.history.length === 0 || state.isComplete) return state
+      if (state.history.length === 0) return state
       const newHistory = [...state.history]
       const prevBoard = newHistory.pop()!
       const newFuture = [state.board, ...state.future].slice(0, HISTORY_LIMIT)
-      return { ...state, board: prevBoard, history: newHistory, future: newFuture }
+      const rawBoard = prevBoard.map((r) => r.map((c) => c.value))
+      const isComplete = isBoardComplete(rawBoard, state.solution)
+      return { ...state, board: prevBoard, history: newHistory, future: newFuture, isComplete }
     }
 
     case 'FORWARD': {
-      if (state.future.length === 0 || state.isComplete) return state
+      if (state.future.length === 0) return state
       const newFuture = [...state.future]
       const nextBoard = newFuture.shift()!
       const newHistory = [...state.history, state.board].slice(-HISTORY_LIMIT)
-      return { ...state, board: nextBoard, history: newHistory, future: newFuture }
+      const rawBoard = nextBoard.map((r) => r.map((c) => c.value))
+      const isComplete = isBoardComplete(rawBoard, state.solution)
+      return { ...state, board: nextBoard, history: newHistory, future: newFuture, isComplete }
     }
 
     case 'NEW_GAME': {
