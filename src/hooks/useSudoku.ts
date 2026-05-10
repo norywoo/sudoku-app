@@ -31,6 +31,7 @@ function buildInitialState(difficulty: Difficulty): GameState {
     isComplete: false,
     elapsedSeconds: 0,
     history: [],
+    future: [],
     lastInputCell: null,
   }
 }
@@ -46,6 +47,7 @@ type Action =
   | { type: 'INPUT_NUMBER'; num: number }
   | { type: 'CLEAR_CELL' }
   | { type: 'REVERT' }
+  | { type: 'FORWARD' }
   | { type: 'CYCLE_MARK_COLOR'; row: number; col: number }
   | { type: 'NEW_GAME'; difficulty: Difficulty }
   | { type: 'SET_DIFFICULTY'; difficulty: Difficulty }
@@ -95,6 +97,7 @@ function reducer(state: GameState, action: Action): GameState {
         board: newBoard,
         isComplete,
         history: newHistory,
+        future: [],
         lastInputCell: [row, col],
       }
     }
@@ -128,6 +131,7 @@ function reducer(state: GameState, action: Action): GameState {
         ...state,
         board: newBoard,
         history: newHistory,
+        future: [],
         lastInputCell: isLastInput ? null : state.lastInputCell,
       }
     }
@@ -149,7 +153,16 @@ function reducer(state: GameState, action: Action): GameState {
       if (state.history.length === 0 || state.isComplete) return state
       const newHistory = [...state.history]
       const prevBoard = newHistory.pop()!
-      return { ...state, board: prevBoard, history: newHistory }
+      const newFuture = [state.board, ...state.future].slice(0, HISTORY_LIMIT)
+      return { ...state, board: prevBoard, history: newHistory, future: newFuture }
+    }
+
+    case 'FORWARD': {
+      if (state.future.length === 0 || state.isComplete) return state
+      const newFuture = [...state.future]
+      const nextBoard = newFuture.shift()!
+      const newHistory = [...state.history, state.board].slice(-HISTORY_LIMIT)
+      return { ...state, board: nextBoard, history: newHistory, future: newFuture }
     }
 
     case 'NEW_GAME': {
@@ -261,6 +274,10 @@ export function useSudoku() {
     dispatch({ type: 'REVERT' })
   }, [])
 
+  const forward = useCallback(() => {
+    dispatch({ type: 'FORWARD' })
+  }, [])
+
   const cycleMarkColor = useCallback((row: number, col: number) => {
     dispatch({ type: 'CYCLE_MARK_COLOR', row, col })
   }, [])
@@ -277,6 +294,8 @@ export function useSudoku() {
     setDifficulty,
     revert,
     canRevert: state.history.length > 0,
+    forward,
+    canForward: state.future.length > 0,
     cycleMarkColor,
     lastInputCell: state.lastInputCell,
   }

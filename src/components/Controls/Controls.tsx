@@ -7,9 +7,11 @@ interface ControlsProps {
   elapsedSeconds: number
   isComplete: boolean
   canRevert: boolean
+  canForward: boolean
   onNewGame: (difficulty: Difficulty) => void
   onSetDifficulty: (difficulty: Difficulty) => void
   onRevert: () => void
+  onForward: () => void
 }
 
 function formatTime(seconds: number): string {
@@ -30,9 +32,11 @@ export const Controls = memo(function Controls({
   elapsedSeconds,
   isComplete,
   canRevert,
+  canForward,
   onNewGame,
   onSetDifficulty,
   onRevert,
+  onForward,
 }: ControlsProps) {
   const handleNewGame = () => onNewGame(difficulty)
 
@@ -61,14 +65,26 @@ export const Controls = memo(function Controls({
       </div>
 
       <div className={styles.actionRow}>
-        <button
-          className={styles.revertBtn}
-          onClick={onRevert}
-          disabled={!canRevert || isComplete}
-          aria-label="Revert last move"
-        >
-          ↩ Revert
-        </button>
+        <div className={styles.historyGroup} role="group" aria-label="Undo / Redo">
+          <button
+            className={styles.historyBtn}
+            onClick={onRevert}
+            disabled={!canRevert || isComplete}
+            aria-label="Undo"
+            title="Undo (Ctrl+Z)"
+          >
+            ◀
+          </button>
+          <button
+            className={styles.historyBtn}
+            onClick={onForward}
+            disabled={!canForward || isComplete}
+            aria-label="Redo"
+            title="Redo (Ctrl+Y)"
+          >
+            ▶
+          </button>
+        </div>
         <button className={styles.newGameBtn} onClick={handleNewGame}>
           New Game
         </button>

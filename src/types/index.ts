@@ -18,5 +18,6 @@ export interface GameState {
   isComplete: boolean
   elapsedSeconds: number
   history: CellState[][][]
+  future: CellState[][][]
   lastInputCell: [number, number] | null
 }

@@ -16,6 +16,8 @@ export default function App() {
     setDifficulty,
     revert,
     canRevert,
+    forward,
+    canForward,
     cycleMarkColor,
     lastInputCell,
   } = useSudoku()
@@ -42,6 +44,12 @@ export default function App() {
         return
       }
 
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.shiftKey && e.key === 'z'))) {
+        e.preventDefault()
+        forward()
+        return
+      }
+
       // Arrow key navigation
       if (!state.selectedCell) return
       const [r, c] = state.selectedCell
@@ -59,7 +67,7 @@ export default function App() {
         }
       }
     },
-    [state.isComplete, state.selectedCell, inputNumber, clearCell, selectCell, revert],
+    [state.isComplete, state.selectedCell, inputNumber, clearCell, selectCell, revert, forward],
   )
 
   useEffect(() => {
@@ -81,9 +89,11 @@ export default function App() {
           elapsedSeconds={state.elapsedSeconds}
           isComplete={state.isComplete}
           canRevert={canRevert}
+          canForward={canForward}
           onNewGame={newGame}
           onSetDifficulty={setDifficulty}
           onRevert={revert}
+          onForward={forward}
         />
 
         <Board

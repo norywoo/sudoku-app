@@ -69,11 +69,18 @@
 .actionRow {
   display: flex;
   gap: 8px;
+  align-items: stretch;
 }
 
-.revertBtn {
+.historyGroup {
+  display: flex;
+  gap: 4px;
   flex: 0 0 auto;
-  padding: 12px 18px;
+}
+
+.historyBtn {
+  width: 44px;
+  padding: 10px 0;
   font-size: 1rem;
   font-weight: 700;
   border: 2px solid var(--border-light);
@@ -82,21 +89,22 @@
   color: var(--btn-text);
   cursor: pointer;
   transition: background-color 0.12s ease, border-color 0.12s ease, color 0.12s ease, transform 0.08s ease;
-  letter-spacing: 0.02em;
-  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.revertBtn:hover:not(:disabled) {
+.historyBtn:hover:not(:disabled) {
   border-color: var(--accent);
   color: var(--accent);
 }
 
-.revertBtn:active:not(:disabled) {
-  transform: scale(0.98);
+.historyBtn:active:not(:disabled) {
+  transform: scale(0.95);
 }
 
-.revertBtn:disabled {
-  opacity: 0.35;
+.historyBtn:disabled {
+  opacity: 0.3;
   cursor: not-allowed;
 }
 

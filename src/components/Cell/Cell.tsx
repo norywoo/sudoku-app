@@ -2,8 +2,8 @@ import { memo } from 'react'
 import { CellState } from '../../types'
 import styles from './Cell.module.css'
 
-// Cycles: 黒 → DarkRed → DarkGreen → DarkPurple → DarkYellow → 黒
-const MARK_COLORS = ['#1f2937', '#8b0000', '#006400', '#4b0082', '#a16207']
+// Cycles: 黒 → Red → Green → Purple → Amber → 黒
+const MARK_COLORS = ['#111827', '#dc2626', '#16a34a', '#9333ea', '#d97706']
 
 interface CellProps {
   cell: CellState
