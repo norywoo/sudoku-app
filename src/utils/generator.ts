@@ -106,14 +106,9 @@ export function generatePuzzle(difficulty: Difficulty): {
     const backup = puzzle[r][c]
     puzzle[r][c] = 0
 
-    // For hard difficulty skip uniqueness check to improve performance
-    // For easy/medium ensure unique solution
-    if (difficulty !== 'hard') {
-      const solutions = countSolutions(puzzle, 2)
-      if (solutions !== 1) {
-        puzzle[r][c] = backup
-        continue
-      }
+    if (countSolutions(puzzle, 2) !== 1) {
+      puzzle[r][c] = backup
+      continue
     }
 
     removed++
